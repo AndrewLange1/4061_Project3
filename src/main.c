@@ -32,6 +32,76 @@ int main(int argc, char* argv[]) {
 
     // --- YOUR CODE STARTS HERE ---
 
+    int num_workers = atoi(argv[1]);
+    if (num_workers <= 0) {
+        fprintf(stderr, "num_workers must be greater than 0\n");
+        return 1;
+    }
+
+    pthread_t producer_thread;
+    pthread_t *workers = malloc(sizeof(pthread_t) * num_workers);
+    if (workers == NULL) {
+        perror("malloc");
+        return 1;
+    }
+
+    struct timespec start, end;
+
+    FILE *wf = fopen("../data/weights.bin", "rb");
+    if (wf == NULL) {
+        perror("fopen weights.bin");
+        free(workers);
+        return 1;
+    }
+
+    size_t weights_read = fread(weights, sizeof(float), IMG_SIZE * NUM_CLASSES, wf);
+    fclose(wf);
+
+    if (weights_read != IMG_SIZE * NUM_CLASSES) {
+        fprintf(stderr, "Failed to read weights.bin correctly\n");
+        free(workers);
+        return 1;
+    }
+
+    if (clock_gettime(CLOCK_MONOTONIC, &start) != 0) {
+        perror("clock_gettime start");
+        free(workers);
+        return 1;
+    }
+
+    if (pthread_create(&producer_thread, NULL, producer, &num_workers) != 0) {
+        perror("pthread_create producer");
+        free(workers);
+        return 1;
+    }
+
+    for (int i = 0; i < num_workers; i++) {
+        if (pthread_create(&workers[i], NULL, consumer, NULL) != 0) {
+            perror("pthread_create consumer");
+            free(workers);
+            return 1;
+        }
+    }
+
+    if (pthread_join(producer_thread, NULL) != 0) {
+        perror("pthread_join producer");
+        free(workers);
+        return 1;
+    }
+
+    for (int i = 0; i < num_workers; i++) {
+        if (pthread_join(workers[i], NULL) != 0) {
+            perror("pthread_join consumer");
+            free(workers);
+            return 1;
+        }
+    }
+
+    if (clock_gettime(CLOCK_MONOTONIC, &end) != 0) {
+        perror("clock_gettime end");
+        free(workers);
+        return 1;
+    }
 
     // --- YOUR CODE ENDS HERE ---
 
