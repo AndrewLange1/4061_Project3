@@ -1,1 +1,73 @@
-See Section 7 in the writeup for more details
+GROUP INFORMATION:
+Group Number: TBD
+Member 1: Ayden DeBoer | x500: deboe190
+Member 2: Andrew Lange | x500: lang1395
+
+INDIVIDUAL CONTRIBUTIONS:
+Ayden: Implemented consumer.c and README, mutex/condition variable 
+synchronization, matrix-vector dot product, argmax prediction, and 
+global results storage. 
+
+AJ: Implemented producer.c and main.c, binary file reading for images.bin and
+labels.bin, circular buffer logic, mutex/condition variable synchronization, 
+thread creation, joining, timing, and accuracy calculation.
+
+DESIGN LOGIC:
+The system uses the Producer-Consumer pattern. One producer thread
+reads images and enqueues tasks into a shared circular
+buffer. N consumer threads dequeue tasks, perform matrix-vector
+multiplication against pre-trained weights, and store predictions.
+
+A mutex protects all queue access. Consumers wait on not_empty when
+the queue is empty, and the producer signals it after each enqueue.
+Termination is handled by pushing N poison pill tasks (is_last=1)
+after all images are processed, each consumer exits when it
+dequeues one. The mutex is released before computation so all
+consumers can run their math in parallel.
+
+Pseudocode:
+
+Producer:
+  open images.bin, labels.bin
+  for each image:
+    lock mutex
+    while buffer full: wait on not_full
+    enqueue task
+    increment count, advance tail
+    signal not_empty
+    unlock mutex
+  for each worker:
+    lock mutex
+    enqueue poison pill (is_last=1)
+    signal not_empty
+    unlock mutex
+  close files
+
+Consumer:
+  loop forever:
+    lock mutex
+    while count == 0: wait on not_empty
+    dequeue task, advance head, decrement count
+    signal not_full
+    unlock mutex
+    if task.is_last: pthread_exit
+    compute dot product (pixels x weights)
+    find argmax of output
+    store prediction in predictions[image_id]
+
+PERFORMANCE SUMMARY:
+Buffer Size: 10,000
+| Threads | Accuracy        | Execution Time |
+| 1       | 86.49% (8649/10000) | 0.2901s    |
+| 4       | 86.49% (8649/10000) | 0.0861s    |
+| 8       | 86.49% (8649/10000) | 0.1290s    |
+
+PERFORMANCE ANALYSIS:
+Accuracy was consistent across all thread counts confirming no race
+conditions or data corruption. Speedup from 1 to 4 threads was
+strong at 3.4x. Performance dropped at 8 threads due to thread
+scheduling overhead and lock conflicts outweighing the benefit of
+additional parallelism.
+
+EXTRA CREDIT:
+Extra credit was not attempted.

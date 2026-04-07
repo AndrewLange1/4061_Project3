@@ -47,7 +47,7 @@ int main(int argc, char* argv[]) {
 
     struct timespec start, end;
 
-    FILE *wf = fopen("../data/weights.bin", "rb");
+    FILE *wf = fopen("data/weights.bin", "rb");
     if (wf == NULL) {
         perror("fopen weights.bin");
         free(workers);
