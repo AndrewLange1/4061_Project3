@@ -57,10 +57,11 @@ Consumer:
 
 PERFORMANCE SUMMARY:
 Buffer Size: 10,000
-| Threads | Accuracy        | Execution Time |
-| 1       | 86.49% (8649/10000) | 0.2901s    |
-| 4       | 86.49% (8649/10000) | 0.0861s    |
-| 8       | 86.49% (8649/10000) | 0.1290s    |
+| Threads | Accuracy            | Execution Time |
+|---------|---------------------|----------------|
+| 1       | 86.49% (8649/10000) | 0.2901s        |
+| 4       | 86.49% (8649/10000) | 0.0861s        |
+| 8       | 86.49% (8649/10000) | 0.1290s        |
 
 PERFORMANCE ANALYSIS:
 Accuracy was consistent across all thread counts confirming no race
